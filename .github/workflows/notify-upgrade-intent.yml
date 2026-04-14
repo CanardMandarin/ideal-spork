@@ -12,8 +12,8 @@ jobs:
     if: contains(github.event.issue.title, '[Upgrade]')
 
     env:
-      SLACK_REVIEW_GROUP_HANDLE: security-upgrade-intent
-      SLACK_REVIEW_GROUP_ID: S0ASA3CND9V
+      SLACK_REVIEW_GROUP_HANDLE: ${{ vars.SLACK_REVIEW_GROUP_HANDLE }}
+      SLACK_REVIEW_GROUP_ID: ${{ vars.SLACK_REVIEW_GROUP_ID }}
 
     steps:
       - name: Parse Issue Body
