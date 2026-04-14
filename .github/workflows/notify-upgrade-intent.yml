@@ -71,96 +71,73 @@ jobs:
             SUMMARY_TRIMMED="${SUMMARY_TRIMMED}…"
           fi
 
-          PAYLOAD=$(cat <<EOF
-          {
-            "text": "<!subteam^${SLACK_REVIEW_GROUP_ID}|${SLACK_REVIEW_GROUP_HANDLE}> — New Program Upgrade Intent submitted: <${ISSUE_URL}|#${ISSUE_NUMBER} ${ISSUE_TITLE}>",
-            "blocks": [
-              {
-                "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "🚀 New Program Upgrade Intent",
-                  "emoji": true
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "<!subteam^${SLACK_REVIEW_GROUP_ID}|${SLACK_REVIEW_GROUP_HANDLE}> — a new upgrade intent has been submitted and requires your review."
-                }
-              },
-              {
-                "type": "divider"
-              },
-              {
-                "type": "section",
-                "fields": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Issue*\n<${ISSUE_URL}|#${ISSUE_NUMBER} — ${ISSUE_TITLE}>"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Submitted by*\n<${AUTHOR_URL}|@${AUTHOR}>"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Project*\n${PROJECT}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Upgrade Reason*\n${UPGRADE_REASON}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Commit / Branch*\n\`${COMMIT_ID}\`"
+          # Use jq to safely build JSON — this handles escaping of all special
+          # characters in user-supplied strings (angle brackets, dashes, quotes, etc.)
+          PAYLOAD=$(jq -n \
+            --arg group_id    "$SLACK_REVIEW_GROUP_ID" \
+            --arg group_handle "$SLACK_REVIEW_GROUP_HANDLE" \
+            --arg issue_url   "$ISSUE_URL" \
+            --arg issue_num   "#${ISSUE_NUMBER}" \
+            --arg issue_title "$ISSUE_TITLE" \
+            --arg author      "@${AUTHOR}" \
+            --arg author_url  "$AUTHOR_URL" \
+            --arg project     "$PROJECT" \
+            --arg reason      "$UPGRADE_REASON" \
+            --arg commit      "$COMMIT_ID" \
+            --arg program_id  "$PROGRAM_ID" \
+            --arg build_hash  "$BUILD_HASH" \
+            --arg summary     "$SUMMARY_TRIMMED" \
+            '{
+              text: ("<!subteam^" + $group_id + "|" + $group_handle + "> — New Program Upgrade Intent submitted: <" + $issue_url + "|" + $issue_num + " " + $issue_title + ">"),
+              blocks: [
+                {
+                  type: "header",
+                  text: { type: "plain_text", text: "🚀 New Program Upgrade Intent", emoji: true }
+                },
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: ("<!subteam^" + $group_id + "|" + $group_handle + "> — a new upgrade intent has been submitted and requires your review.")
                   }
-                ]
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Program ID*\n\`${PROGRAM_ID}\`"
+                },
+                { type: "divider" },
+                {
+                  type: "section",
+                  fields: [
+                    { type: "mrkdwn", text: ("*Issue*\n<" + $issue_url + "|" + $issue_num + " — " + $issue_title + ">") },
+                    { type: "mrkdwn", text: ("*Submitted by*\n<" + $author_url + "|" + $author + ">") },
+                    { type: "mrkdwn", text: ("*Project*\n" + $project) },
+                    { type: "mrkdwn", text: ("*Upgrade Reason*\n" + $reason) },
+                    { type: "mrkdwn", text: ("*Commit / Branch*\n`" + $commit + "`") }
+                  ]
+                },
+                {
+                  type: "section",
+                  text: { type: "mrkdwn", text: ("*Program ID*\n`" + $program_id + "`") }
+                },
+                {
+                  type: "section",
+                  text: { type: "mrkdwn", text: ("*Build Hash*\n`" + $build_hash + "`") }
+                },
+                {
+                  type: "section",
+                  text: { type: "mrkdwn", text: ("*Summary of Changes*\n" + $summary) }
+                },
+                { type: "divider" },
+                {
+                  type: "actions",
+                  elements: [
+                    {
+                      type: "button",
+                      text: { type: "plain_text", text: "View Issue", emoji: true },
+                      style: "primary",
+                      url: $issue_url
+                    }
+                  ]
                 }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Build Hash*\n\`${BUILD_HASH}\`"
-                }
-              },
-              {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "*Summary of Changes*\n${SUMMARY_TRIMMED}"
-                }
-              },
-              {
-                "type": "divider"
-              },
-              {
-                "type": "actions",
-                "elements": [
-                  {
-                    "type": "button",
-                    "text": {
-                      "type": "plain_text",
-                      "text": "View Issue",
-                      "emoji": true
-                    },
-                    "style": "primary",
-                    "url": "${ISSUE_URL}"
-                  }
-                ]
-              }
-            ]
-          }
-          EOF
-          )
+              ]
+            }')
 
           curl -f -X POST \
             -H "Content-Type: application/json" \
