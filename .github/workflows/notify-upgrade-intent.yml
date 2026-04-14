@@ -21,10 +21,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const body = context.payload.issue.body || '';
+            const body  = context.payload.issue.body  || '';
+            const title = context.payload.issue.title || '';
 
             const extract = (label) => {
-              // Matches "### Label\n\nvalue" blocks produced by GitHub issue forms
               const regex = new RegExp(
                 `###\\s*${label}\\s*\\n+([\\s\\S]*?)(?=\\n###|$)`,
                 'i'
@@ -33,37 +33,34 @@ jobs:
               return match ? match[1].trim() : '_Not provided_';
             };
 
-            const project      = extract('Project');
-            const programId    = extract('Program ID');
-            const upgradeReason = extract('Upgrade Reason');
-            const buildHash    = extract('Verifiable Build Hash');
-            const commitId     = extract('Commit ID \\/ Branch');
-            const summary      = extract('Summary of Changes');
+            // Strip < > from the title so it never breaks Slack's <url|label> syntax
+            const safeTitle = title.replace(/[<>]/g, '');
 
-            core.setOutput('project',       project);
-            core.setOutput('program_id',    programId);
-            core.setOutput('upgrade_reason', upgradeReason);
-            core.setOutput('build_hash',    buildHash);
-            core.setOutput('commit_id',     commitId);
-            core.setOutput('summary',       summary);
+            core.setOutput('safe_title',     safeTitle);
+            core.setOutput('project',        extract('Project'));
+            core.setOutput('program_id',     extract('Program ID'));
+            core.setOutput('upgrade_reason', extract('Upgrade Reason'));
+            core.setOutput('build_hash',     extract('Verifiable Build Hash'));
+            core.setOutput('commit_id',      extract('Commit ID \\/ Branch'));
+            core.setOutput('summary',        extract('Summary of Changes'));
 
       - name: Send Slack Message
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # All dynamic values come from step outputs — never raw GitHub expressions
+          # interpolated directly into shell, which would break on special characters.
+          ISSUE_URL:     ${{ github.event.issue.html_url }}
+          ISSUE_NUMBER:  ${{ github.event.issue.number }}
+          ISSUE_TITLE:   ${{ steps.parse.outputs.safe_title }}
+          AUTHOR:        ${{ github.event.issue.user.login }}
+          PROJECT:       ${{ steps.parse.outputs.project }}
+          PROGRAM_ID:    ${{ steps.parse.outputs.program_id }}
+          UPGRADE_REASON: ${{ steps.parse.outputs.upgrade_reason }}
+          BUILD_HASH:    ${{ steps.parse.outputs.build_hash }}
+          COMMIT_ID:     ${{ steps.parse.outputs.commit_id }}
+          SUMMARY:       ${{ steps.parse.outputs.summary }}
         run: |
-          ISSUE_URL="${{ github.event.issue.html_url }}"
-          ISSUE_NUMBER="${{ github.event.issue.number }}"
-          ISSUE_TITLE="${{ github.event.issue.title }}"
-          AUTHOR="${{ github.event.issue.user.login }}"
-          AUTHOR_URL="https://github.com/${{ github.event.issue.user.login }}"
-          REPO="${{ github.repository }}"
-
-          PROJECT="${{ steps.parse.outputs.project }}"
-          PROGRAM_ID="${{ steps.parse.outputs.program_id }}"
-          UPGRADE_REASON="${{ steps.parse.outputs.upgrade_reason }}"
-          BUILD_HASH="${{ steps.parse.outputs.build_hash }}"
-          COMMIT_ID="${{ steps.parse.outputs.commit_id }}"
-          SUMMARY="${{ steps.parse.outputs.summary }}"
+          AUTHOR_URL="https://github.com/${AUTHOR}"
 
           # Truncate summary to avoid Slack block limits (3000 chars)
           SUMMARY_TRIMMED="${SUMMARY:0:500}"
@@ -71,25 +68,22 @@ jobs:
             SUMMARY_TRIMMED="${SUMMARY_TRIMMED}…"
           fi
 
-          # Use jq to safely build JSON — this handles escaping of all special
-          # characters in user-supplied strings (angle brackets, dashes, quotes, etc.)
+          # jq receives all values as typed --arg parameters, ensuring safe JSON encoding.
           PAYLOAD=$(jq -n \
-            --arg group_id    "$SLACK_REVIEW_GROUP_ID" \
+            --arg group_id     "$SLACK_REVIEW_GROUP_ID" \
             --arg group_handle "$SLACK_REVIEW_GROUP_HANDLE" \
-            --arg issue_url   "$ISSUE_URL" \
-            --arg issue_num   "#${ISSUE_NUMBER}" \
-            --arg issue_title "$ISSUE_TITLE" \
-            --arg author      "@${AUTHOR}" \
-            --arg author_url  "$AUTHOR_URL" \
-            --arg project     "$PROJECT" \
-            --arg reason      "$UPGRADE_REASON" \
-            --arg commit      "$COMMIT_ID" \
-            --arg program_id  "$PROGRAM_ID" \
-            --arg build_hash  "$BUILD_HASH" \
-            --arg summary     "$SUMMARY_TRIMMED" \
-            '
-            ($issue_title | gsub("<"; "") | gsub(">"; "")) as $safe_title |
-            {
+            --arg issue_url    "$ISSUE_URL" \
+            --arg issue_num    "#${ISSUE_NUMBER}" \
+            --arg issue_title  "$ISSUE_TITLE" \
+            --arg author       "@${AUTHOR}" \
+            --arg author_url   "$AUTHOR_URL" \
+            --arg project      "$PROJECT" \
+            --arg reason       "$UPGRADE_REASON" \
+            --arg commit       "$COMMIT_ID" \
+            --arg program_id   "$PROGRAM_ID" \
+            --arg build_hash   "$BUILD_HASH" \
+            --arg summary      "$SUMMARY_TRIMMED" \
+            '{
               text: ("<!subteam^" + $group_id + "|" + $group_handle + "> — New Program Upgrade Intent submitted: <" + $issue_url + "|" + $issue_num + " " + $issue_title + ">"),
               blocks: [
                 {
