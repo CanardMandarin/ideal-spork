@@ -1,0 +1,83 @@
+name: 🚀 Program Upgrade Intent
+description: Submit a structured request for a program upgrade
+title: "[Upgrade]: <program-id>"
+labels: ["program-upgrade"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🚀 **Program Upgrade Intent**
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        Please fill out all required fields carefully. This will be reviewed by the security team.
+
+  - type: input
+    id: repo
+    attributes:
+      label: GitHub Repo
+      placeholder: https://github.com/org/repo
+    validations:
+      required: true
+
+  - type: input
+    id: program_id
+    attributes:
+      label: Program ID
+      placeholder: e.g. 9xQeWvG816bUx9EPjHmaT23kF1d9k...
+    validations:
+      required: true
+
+  - type: input
+    id: build_hash
+    attributes:
+      label: Verifiable Build Hash
+      placeholder: sha256...
+    validations:
+      required: true
+
+  - type: input
+    id: commit_id
+    attributes:
+      label: Commit ID
+      placeholder: git commit hash
+    validations:
+      required: true
+
+  - type: input
+    id: audit
+    attributes:
+      label: Audit Report
+      placeholder: https://link-to-audit-report
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary of Changes
+      description: Briefly describe what this upgrade does
+      placeholder: Explain the purpose and impact of this upgrade
+    validations:
+      required: true
+
+  - type: input
+    id: submitted_by
+    attributes:
+      label: Submitted by
+      placeholder: Your name
+    validations:
+      required: true
+
+  - type: input
+    id: date
+    attributes:
+      label: Date
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
