@@ -87,7 +87,9 @@ jobs:
             --arg program_id  "$PROGRAM_ID" \
             --arg build_hash  "$BUILD_HASH" \
             --arg summary     "$SUMMARY_TRIMMED" \
-            '{
+            '
+            ($issue_title | gsub("<"; "") | gsub(">"; "")) as $safe_title |
+            {
               text: ("<!subteam^" + $group_id + "|" + $group_handle + "> — New Program Upgrade Intent submitted: <" + $issue_url + "|" + $issue_num + " " + $issue_title + ">"),
               blocks: [
                 {
