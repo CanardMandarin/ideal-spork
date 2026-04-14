@@ -56,15 +56,6 @@ body:
     validations:
       required: true
 
-  - type: upload
-    id: audit_reports
-    attributes:
-      label: Audit Reports
-      description: >
-        Attach audit reports if applicable.
-    validations:
-      required: false
-  
   - type: textarea
     id: summary
     attributes:
@@ -75,3 +66,12 @@ body:
         **What changed:**
     validations:
       required: true
+
+  - type: upload
+    id: audit_reports
+    attributes:
+      label: Audit Reports
+      description: >
+        Attach audit reports if applicable.
+    validations:
+      required: false
