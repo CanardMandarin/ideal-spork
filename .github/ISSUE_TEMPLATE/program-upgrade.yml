@@ -1,83 +1,154 @@
-name: 🚀 Program Upgrade Intent
-description: Submit a structured request for a program upgrade
-title: "[Upgrade]: <program-id>"
-labels: ["program-upgrade"]
-assignees: []
+name: 🛠️ Custom Issue Report
+description: Use this form to report a bug, request a feature, or raise any other concern.
+title: "[TYPE] <Short summary of your issue>"
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        🚀 **Program Upgrade Intent**
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        Please fill out all required fields carefully. This will be reviewed by the security team.
 
-  - type: input
-    id: repo
+  # ── SECTION: Preflight checklist ─────────────────────────────────────────────
+  - type: checkboxes
+    id: preflight
     attributes:
-      label: GitHub Repo
-      placeholder: https://github.com/org/repo
+      label: ✅ Before you submit
+      description: Please confirm all of the following before opening this issue.
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I have read the [contributing guidelines](https://github.com/your-org/your-repo/blob/main/CONTRIBUTING.md).
+          required: true
+        - label: I am using a supported version of the project.
+          required: false
+
+  # ── SECTION: Issue classification ────────────────────────────────────────────
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: 📂 Issue Type
+      description: What best describes this issue?
+      options:
+        - "🐛 Bug – Something isn't working as expected"
+        - "✨ Feature Request – I'd like a new capability"
+        - "📝 Documentation – Missing, incorrect, or unclear docs"
+        - "⚡ Performance – Slowness or resource usage problems"
+        - "🔒 Security – Potential vulnerability (consider private disclosure)"
+        - "🔧 Maintenance – Refactor, dependency update, or cleanup"
+        - "❓ Question – I need help understanding something"
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚦 Severity / Priority
+      description: How critical is this issue to you or your users?
+      options:
+        - "🔴 Critical – System is unusable / data loss"
+        - "🟠 High – Major feature broken, no workaround"
+        - "🟡 Medium – Feature partially broken, workaround exists"
+        - "🟢 Low – Minor inconvenience or cosmetic issue"
+      default: 2
+    validations:
+      required: true
+
+  # ── SECTION: Basic details (single-line inputs) ───────────────────────────────
+  - type: input
+    id: affected_version
+    attributes:
+      label: 📦 Affected Version
+      description: Which version of the project are you using?
+      placeholder: "e.g. v2.4.1"
     validations:
       required: true
 
   - type: input
-    id: program_id
+    id: os_environment
     attributes:
-      label: Program ID
-      placeholder: e.g. 9xQeWvG816bUx9EPjHmaT23kF1d9k...
+      label: 💻 Operating System & Environment
+      description: OS name, version, and any relevant runtime info.
+      placeholder: "e.g. macOS 14.4 / Ubuntu 22.04 / Windows 11 — Node 20.x"
     validations:
       required: true
 
   - type: input
-    id: build_hash
+    id: browser_or_client
     attributes:
-      label: Verifiable Build Hash
-      placeholder: sha256...
+      label: 🌐 Browser / Client (if applicable)
+      description: Leave blank if this is a server-side or CLI issue.
+      placeholder: "e.g. Chrome 124, Firefox 125, Safari 17, curl"
     validations:
-      required: true
+      required: false
 
   - type: input
-    id: commit_id
+    id: related_issues
     attributes:
-      label: Commit ID
-      placeholder: git commit hash
+      label: 🔗 Related Issues or PRs
+      description: Link any relevant issues or pull requests (comma-separated).
+      placeholder: "#123, #456, https://github.com/..."
+    validations:
+      required: false
+
+  # ── SECTION: Description (textareas) ─────────────────────────────────────────
+  - type: textarea
+    id: description
+    attributes:
+      label: 📋 Issue Description
+      description: >
+        Give a clear and concise summary of the issue or request.
+        For bugs, explain what went wrong. For features, explain the problem you're trying to solve.
+      placeholder: "Describe your issue here…"
     validations:
       required: true
-
-  - type: input
-    id: audit
-    attributes:
-      label: Audit Report
-      placeholder: https://link-to-audit-report
-    validations:
-      required: true
-
-  - type: markdown
-    attributes:
-      value: |
-        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - type: textarea
-    id: summary
+    id: steps_to_reproduce
     attributes:
-      label: Summary of Changes
-      description: Briefly describe what this upgrade does
-      placeholder: Explain the purpose and impact of this upgrade
+      label: 🔁 Steps to Reproduce
+      description: Provide a minimal, reproducible sequence of steps. Use numbered steps.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Run command '...'
+        4. Observe the error
     validations:
-      required: true
+      required: false
 
-  - type: input
-    id: submitted_by
+  - type: textarea
+    id: expected_vs_actual
     attributes:
-      label: Submitted by
-      placeholder: Your name
+      label: 🎯 Expected vs. Actual Behavior
+      description: What did you expect to happen? What actually happened?
+      placeholder: |
+        **Expected:** The component renders correctly.
+        **Actual:** A blank screen is shown with no error in the console.
     validations:
-      required: true
+      required: false
 
-  - type: input
-    id: date
+  - type: textarea
+    id: logs_and_attachments
     attributes:
-      label: Date
-      placeholder: YYYY-MM-DD
+      label: 📎 Logs, Screenshots & File Attachments
+      description: >
+        Paste relevant error messages or stack traces below.
+        To attach screenshots or files, **drag and drop them directly into this text box**
+        or click the paperclip icon — GitHub will upload them and insert a link automatically.
+      placeholder: |
+        ```
+        Paste your error / stack trace here
+        ```
+
+        <!-- Drag & drop images or files anywhere in this box to attach them -->
+      render: shell
     validations:
-      required: true
+      required: false
+
+  # ── SECTION: Additional context ───────────────────────────────────────────────
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: 💬 Additional Context
+      description: >
+        Anything else that might help us understand or prioritise this issue —
+        workarounds you've tried, business impact, relevant config, etc.
+      placeholder: "Any other context goes here…"
+    validations:
+      required: false
