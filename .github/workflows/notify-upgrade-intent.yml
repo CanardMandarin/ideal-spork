@@ -98,7 +98,7 @@ jobs:
                   type: "section",
                   text: {
                     type: "mrkdwn",
-                    text: ("<!subteam^" + $group_id + "|" + $group_handle + "> — a new upgrade intent has been submitted and requires your review.")
+                    text: ("<!subteam^" + $group_id + "|" + $group_handle + "> — a new upgrade intent has been submitted and requires a review.")
                   }
                 },
                 { type: "divider" },
