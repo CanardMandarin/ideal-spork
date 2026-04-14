@@ -102,10 +102,6 @@ jobs:
                   },
                   {
                     "type": "mrkdwn",
-                    "text": "*Repository*\n<https://github.com/${REPO}|${REPO}>"
-                  },
-                  {
-                    "type": "mrkdwn",
                     "text": "*Submitted by*\n<${AUTHOR_URL}|@${AUTHOR}>"
                   },
                   {
@@ -118,17 +114,23 @@ jobs:
                   },
                   {
                     "type": "mrkdwn",
-                    "text": "*Program ID*\n\`${PROGRAM_ID}\`"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Build Hash*\n\`${BUILD_HASH}\`"
-                  },
-                  {
-                    "type": "mrkdwn",
                     "text": "*Commit / Branch*\n\`${COMMIT_ID}\`"
                   }
                 ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Program ID*\n\`${PROGRAM_ID}\`"
+                }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Build Hash*\n\`${BUILD_HASH}\`"
+                }
               },
               {
                 "type": "section",
