@@ -66,8 +66,6 @@ body:
         Supported formats: PDF, MD, TXT.
       placeholder: |
         <!-- Drag & drop audit report files here -->
-    validations:
-      required: true
 
   - type: textarea
     id: summary
