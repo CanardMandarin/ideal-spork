@@ -1,154 +1,90 @@
-name: 🛠️ Custom Issue Report
-description: Use this form to report a bug, request a feature, or raise any other concern.
-title: "[TYPE] <Short summary of your issue>"
+name: 🚀 Program Upgrade Intent
+description: Submit an intent to upgrade a on-chain program.
+title: "[Upgrade] <Program> — <Short reason>"
 
 body:
 
-  # ── SECTION: Preflight checklist ─────────────────────────────────────────────
-  - type: checkboxes
-    id: preflight
-    attributes:
-      label: ✅ Before you submit
-      description: Please confirm all of the following before opening this issue.
-      options:
-        - label: I have searched existing issues and this is not a duplicate.
-          required: true
-        - label: I have read the [contributing guidelines](https://github.com/your-org/your-repo/blob/main/CONTRIBUTING.md).
-          required: true
-        - label: I am using a supported version of the project.
-          required: false
-
-  # ── SECTION: Issue classification ────────────────────────────────────────────
   - type: dropdown
-    id: issue_type
+    id: project
     attributes:
-      label: 📂 Issue Type
-      description: What best describes this issue?
+      label: Project
+      description: Which project does this upgrade apply to?
       options:
-        - "🐛 Bug – Something isn't working as expected"
-        - "✨ Feature Request – I'd like a new capability"
-        - "📝 Documentation – Missing, incorrect, or unclear docs"
-        - "⚡ Performance – Slowness or resource usage problems"
-        - "🔒 Security – Potential vulnerability (consider private disclosure)"
-        - "🔧 Maintenance – Refactor, dependency update, or cleanup"
-        - "❓ Question – I need help understanding something"
-      default: 0
+        - Jupiter Perps
+        - Jupiter Lend
+        - Offerbook
+    validations:
+      required: true
+
+  - type: input
+    id: program_id
+    attributes:
+      label: Program ID
+      description: The on-chain Solana program ID being upgraded.
+      placeholder: "e.g. JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4"
     validations:
       required: true
 
   - type: dropdown
-    id: severity
+    id: upgrade_reason
     attributes:
-      label: 🚦 Severity / Priority
-      description: How critical is this issue to you or your users?
+      label: Upgrade Reason
+      description: What is the primary reason for this upgrade?
       options:
-        - "🔴 Critical – System is unusable / data loss"
-        - "🟠 High – Major feature broken, no workaround"
-        - "🟡 Medium – Feature partially broken, workaround exists"
-        - "🟢 Low – Minor inconvenience or cosmetic issue"
-      default: 2
-    validations:
-      required: true
-
-  # ── SECTION: Basic details (single-line inputs) ───────────────────────────────
-  - type: input
-    id: affected_version
-    attributes:
-      label: 📦 Affected Version
-      description: Which version of the project are you using?
-      placeholder: "e.g. v2.4.1"
+        - Bug fix
+        - Security fix
+        - New feature
+        - Other
     validations:
       required: true
 
   - type: input
-    id: os_environment
+    id: build_hash
     attributes:
-      label: 💻 Operating System & Environment
-      description: OS name, version, and any relevant runtime info.
-      placeholder: "e.g. macOS 14.4 / Ubuntu 22.04 / Windows 11 — Node 20.x"
+      label: Verifiable Build Hash
+      description: The SHA-256 hash of the verifiable build artifact.
+      placeholder: "e.g. sha256:a3f1c2d4e5b67890abcdef1234567890abcdef1234567890abcdef1234567890"
     validations:
       required: true
 
   - type: input
-    id: browser_or_client
+    id: commit_id
     attributes:
-      label: 🌐 Browser / Client (if applicable)
-      description: Leave blank if this is a server-side or CLI issue.
-      placeholder: "e.g. Chrome 124, Firefox 125, Safari 17, curl"
+      label: Commit ID / Branch
+      description: The git commit hash or branch name associated with this build.
+      placeholder: "e.g. a1b2c3d or feat/upgrade-v2"
     validations:
-      required: false
+      required: true
 
-  - type: input
-    id: related_issues
-    attributes:
-      label: 🔗 Related Issues or PRs
-      description: Link any relevant issues or pull requests (comma-separated).
-      placeholder: "#123, #456, https://github.com/..."
-    validations:
-      required: false
-
-  # ── SECTION: Description (textareas) ─────────────────────────────────────────
   - type: textarea
-    id: description
+    id: audit_reports
     attributes:
-      label: 📋 Issue Description
+      label: Audit Reports
       description: >
-        Give a clear and concise summary of the issue or request.
-        For bugs, explain what went wrong. For features, explain the problem you're trying to solve.
-      placeholder: "Describe your issue here…"
+        Attach audit report files by **dragging and dropping them into this box**,
+        or paste links to publicly available audit reports below.
+        Supported formats: PDF, MD, TXT.
+      placeholder: |
+        <!-- Drag & drop audit report files here, or paste links below -->
+
+        - https://audits.example.com/report-v1.pdf
     validations:
       required: true
 
   - type: textarea
-    id: steps_to_reproduce
+    id: summary
     attributes:
-      label: 🔁 Steps to Reproduce
-      description: Provide a minimal, reproducible sequence of steps. Use numbered steps.
-      placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Run command '...'
-        4. Observe the error
-    validations:
-      required: false
-
-  - type: textarea
-    id: expected_vs_actual
-    attributes:
-      label: 🎯 Expected vs. Actual Behavior
-      description: What did you expect to happen? What actually happened?
-      placeholder: |
-        **Expected:** The component renders correctly.
-        **Actual:** A blank screen is shown with no error in the console.
-    validations:
-      required: false
-
-  - type: textarea
-    id: logs_and_attachments
-    attributes:
-      label: 📎 Logs, Screenshots & File Attachments
+      label: Summary of Changes / Reason for Upgrade
       description: >
-        Paste relevant error messages or stack traces below.
-        To attach screenshots or files, **drag and drop them directly into this text box**
-        or click the paperclip icon — GitHub will upload them and insert a link automatically.
+        Provide a clear and thorough explanation of what changed and why this upgrade is necessary.
+        Include any potential risks, rollback strategies, or notable diffs if applicable.
       placeholder: |
-        ```
-        Paste your error / stack trace here
-        ```
+        **What changed:**
+        
 
-        <!-- Drag & drop images or files anywhere in this box to attach them -->
-      render: shell
-    validations:
-      required: false
+        **Why this upgrade is needed:**
+        
 
-  # ── SECTION: Additional context ───────────────────────────────────────────────
-  - type: textarea
-    id: additional_context
-    attributes:
-      label: 💬 Additional Context
-      description: >
-        Anything else that might help us understand or prioritise this issue —
-        workarounds you've tried, business impact, relevant config, etc.
-      placeholder: "Any other context goes here…"
+        **Potential risks / rollback plan:**
     validations:
-      required: false
+      required: true
