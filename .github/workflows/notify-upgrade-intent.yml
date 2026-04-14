@@ -8,12 +8,12 @@ jobs:
   notify-slack:
     name: Send Slack Notification
     runs-on: ubuntu-latest
-    # Only run if the issue title starts with "[Upgrade]"
-    if: startsWith(github.event.issue.title, '[Upgrade]')
+    # Only run for issues that match the upgrade intent template
+    if: contains(github.event.issue.title, '[Upgrade]')
 
     env:
       SLACK_REVIEW_GROUP_HANDLE: security-upgrade-intent
-      SLACK_REVIEW_GROUP_ID: C0ASJNJNSAX
+      SLACK_REVIEW_GROUP_ID: S0ASA3CND9V
 
     steps:
       - name: Parse Issue Body
@@ -24,34 +24,35 @@ jobs:
             const body = context.payload.issue.body || '';
 
             const extract = (label) => {
-              // Matches "### Label\n\nValue" or "### Label\r\n\r\nValue" patterns (GitHub issue forms)
+              // Matches "### Label\n\nvalue" blocks produced by GitHub issue forms
               const regex = new RegExp(
-                `###\\s*${label}\\s*[\\r\\n]+([\\s\\S]*?)(?=###|$)`,
+                `###\\s*${label}\\s*\\n+([\\s\\S]*?)(?=\\n###|$)`,
                 'i'
               );
               const match = body.match(regex);
               return match ? match[1].trim() : '_Not provided_';
             };
 
-            const project       = extract('Project');
-            const programId     = extract('Program ID');
+            const project      = extract('Project');
+            const programId    = extract('Program ID');
             const upgradeReason = extract('Upgrade Reason');
-            const buildHash     = extract('Verifiable Build Hash');
-            const commitId      = extract('Commit ID / Branch');
-            const summary       = extract('Summary of Changes');
+            const buildHash    = extract('Verifiable Build Hash');
+            const commitId     = extract('Commit ID \\/ Branch');
+            const summary      = extract('Summary of Changes');
 
-            core.setOutput('project',        project);
-            core.setOutput('program_id',     programId);
+            core.setOutput('project',       project);
+            core.setOutput('program_id',    programId);
             core.setOutput('upgrade_reason', upgradeReason);
-            core.setOutput('build_hash',     buildHash);
-            core.setOutput('commit_id',      commitId);
-            core.setOutput('summary',        summary);
+            core.setOutput('build_hash',    buildHash);
+            core.setOutput('commit_id',     commitId);
+            core.setOutput('summary',       summary);
 
       - name: Send Slack Message
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           ISSUE_URL="${{ github.event.issue.html_url }}"
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
           ISSUE_TITLE="${{ github.event.issue.title }}"
           AUTHOR="${{ github.event.issue.user.login }}"
           AUTHOR_URL="https://github.com/${{ github.event.issue.user.login }}"
@@ -64,23 +65,21 @@ jobs:
           COMMIT_ID="${{ steps.parse.outputs.commit_id }}"
           SUMMARY="${{ steps.parse.outputs.summary }}"
 
-          # Escape double quotes and newlines for JSON safety
-          escape_json() {
-            echo "$1" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g'
-          }
-
-          SUMMARY_ESC=$(escape_json "$SUMMARY")
-          ISSUE_TITLE_ESC=$(escape_json "$ISSUE_TITLE")
+          # Truncate summary to avoid Slack block limits (3000 chars)
+          SUMMARY_TRIMMED="${SUMMARY:0:500}"
+          if [ ${#SUMMARY} -gt 500 ]; then
+            SUMMARY_TRIMMED="${SUMMARY_TRIMMED}…"
+          fi
 
           PAYLOAD=$(cat <<EOF
           {
-            "text": "<!subteam^${SLACK_REVIEW_GROUP_ID}> :rotating_light: *New Program Upgrade Intent submitted — review required.*",
+            "text": "<!subteam^${SLACK_REVIEW_GROUP_ID}|${SLACK_REVIEW_GROUP_HANDLE}> — New Program Upgrade Intent submitted: <${ISSUE_URL}|#${ISSUE_NUMBER} ${ISSUE_TITLE}>",
             "blocks": [
               {
                 "type": "header",
                 "text": {
                   "type": "plain_text",
-                  "text": "🚀 Program Upgrade Intent",
+                  "text": "🚀 New Program Upgrade Intent",
                   "emoji": true
                 }
               },
@@ -88,27 +87,54 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "<!subteam^${SLACK_REVIEW_GROUP_ID}> — a new upgrade intent has been submitted and requires your review."
+                  "text": "<!subteam^${SLACK_REVIEW_GROUP_ID}|${SLACK_REVIEW_GROUP_HANDLE}> — a new upgrade intent has been submitted and requires your review."
                 }
+              },
+              {
+                "type": "divider"
               },
               {
                 "type": "section",
                 "fields": [
-                  { "type": "mrkdwn", "text": "*Issue:*\n<${ISSUE_URL}|${ISSUE_TITLE_ESC}>" },
-                  { "type": "mrkdwn", "text": "*Submitted by:*\n<${AUTHOR_URL}|${AUTHOR}>" },
-                  { "type": "mrkdwn", "text": "*Repository:*\n${REPO}" },
-                  { "type": "mrkdwn", "text": "*Project:*\n${PROJECT}" },
-                  { "type": "mrkdwn", "text": "*Upgrade Reason:*\n${UPGRADE_REASON}" },
-                  { "type": "mrkdwn", "text": "*Program ID:*\n\`${PROGRAM_ID}\`" },
-                  { "type": "mrkdwn", "text": "*Build Hash:*\n\`${BUILD_HASH}\`" },
-                  { "type": "mrkdwn", "text": "*Commit / Branch:*\n\`${COMMIT_ID}\`" }
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Issue*\n<${ISSUE_URL}|#${ISSUE_NUMBER} — ${ISSUE_TITLE}>"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Repository*\n<https://github.com/${REPO}|${REPO}>"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Submitted by*\n<${AUTHOR_URL}|@${AUTHOR}>"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Project*\n${PROJECT}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Upgrade Reason*\n${UPGRADE_REASON}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Program ID*\n\`${PROGRAM_ID}\`"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Build Hash*\n\`${BUILD_HASH}\`"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Commit / Branch*\n\`${COMMIT_ID}\`"
+                  }
                 ]
               },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*Summary of Changes:*\n${SUMMARY_ESC}"
+                  "text": "*Summary of Changes*\n${SUMMARY_TRIMMED}"
                 }
               },
               {
@@ -119,7 +145,11 @@ jobs:
                 "elements": [
                   {
                     "type": "button",
-                    "text": { "type": "plain_text", "text": "View Issue", "emoji": true },
+                    "text": {
+                      "type": "plain_text",
+                      "text": "View Issue",
+                      "emoji": true
+                    },
                     "style": "primary",
                     "url": "${ISSUE_URL}"
                   }
@@ -130,17 +160,7 @@ jobs:
           EOF
           )
 
-          HTTP_STATUS=$(curl -s -o /tmp/slack_response.txt -w "%{http_code}" \
-            -X POST \
+          curl -f -X POST \
             -H "Content-Type: application/json" \
-            --data "$PAYLOAD" \
-            "$SLACK_WEBHOOK_URL")
-
-          echo "Slack response: $(cat /tmp/slack_response.txt)"
-
-          if [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "❌ Slack notification failed with HTTP status $HTTP_STATUS"
-            exit 1
-          fi
-
-          echo "✅ Slack notification sent successfully"
+            -d "$PAYLOAD" \
+            "$SLACK_WEBHOOK_URL"
