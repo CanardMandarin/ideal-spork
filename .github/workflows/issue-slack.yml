@@ -1,0 +1,152 @@
+name: Notify Slack — Program Upgrade Intent
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.issue.title, '[Upgrade]')
+
+    steps:
+      - name: Build Slack payload
+        id: payload
+        uses: actions/github-script@v7
+        env:
+          # Set these under: Settings → Secrets and variables → Actions → Variables
+          # SLACK_REVIEW_GROUP_ID     e.g. S0123ABCDEF
+          # SLACK_REVIEW_GROUP_HANDLE e.g. security-reviewers  (without the @)
+          SLACK_REVIEW_GROUP_ID:     ${{ vars.SLACK_REVIEW_GROUP_ID }}
+          SLACK_REVIEW_GROUP_HANDLE: ${{ vars.SLACK_REVIEW_GROUP_HANDLE }}
+        with:
+          script: |
+            // ── 1. Normalise line endings and split on ### headings ─────────────
+            //
+            // GitHub issue forms render each field as:
+            //   ### Field Label
+            //   User's answer
+            //
+            // Splitting on "### " is more reliable than regex because it handles
+            // \r\n vs \n, blank lines, and multi-line values naturally.
+            // ───────────────────────────────────────────────────────────────────
+            const raw  = context.payload.issue.body || '';
+            const body = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+            function extract(heading) {
+              // Split the whole body into sections by "### "
+              const sections = body.split(/\n?###\s+/);
+              for (const section of sections) {
+                const newline = section.indexOf('\n');
+                if (newline === -1) continue;
+                const sectionLabel = section.slice(0, newline).trim();
+                const sectionValue = section.slice(newline + 1).trim();
+                if (sectionLabel.toLowerCase() === heading.toLowerCase()) {
+                  // Strip HTML comment placeholders left by the issue template
+                  const clean = sectionValue
+                    .replace(/<!--[\s\S]*?-->/g, '')
+                    .trim();
+                  return clean || '_Not provided_';
+                }
+              }
+              return '_Not provided_';
+            }
+
+            const truncate = (str, n) =>
+              str.length > n ? str.slice(0, n) + '…' : str;
+
+            const project      = extract('Project');
+            const programId    = extract('Program ID');
+            const reason       = extract('Upgrade Reason');
+            const buildHash    = truncate(extract('Verifiable Build Hash'), 200);
+            const commitId     = extract('Commit ID / Branch');
+            const auditReports = truncate(extract('Audit Reports'), 400);
+            const summary      = truncate(
+              extract('Summary of Changes / Reason for Upgrade'), 600
+            );
+
+            // ── 2. Build the user group mention ────────────────────────────────
+            //
+            // Format: <!subteam^GROUP_ID|group-handle>
+            // The handle is required for incoming webhooks — without it Slack
+            // can't resolve the group name and shows "Private group info".
+            // ───────────────────────────────────────────────────────────────────
+            const groupId     = process.env.SLACK_REVIEW_GROUP_ID;
+            const groupHandle = process.env.SLACK_REVIEW_GROUP_HANDLE;
+            const mention     = (groupId && groupHandle)
+              ? `<!subteam^${groupId}|${groupHandle}>`
+              : '<!here>';
+
+            // ── 3. Assemble Block Kit payload ───────────────────────────────────
+            const issue   = context.payload.issue;
+            const payload = {
+              blocks: [
+                {
+                  type: 'header',
+                  text: { type: 'plain_text', text: '🚀 Program Upgrade Intent', emoji: true }
+                },
+                {
+                  type: 'section',
+                  text: {
+                    type: 'mrkdwn',
+                    text: `${mention} — a new upgrade intent requires your attention.\n\n<${issue.html_url}|*#${issue.number} — ${issue.title}*>\nOpened by *${issue.user.login}*`
+                  },
+                  accessory: {
+                    type: 'button',
+                    text: { type: 'plain_text', text: 'View Issue', emoji: true },
+                    url: issue.html_url,
+                    action_id: 'view_issue'
+                  }
+                },
+                { type: 'divider' },
+                {
+                  type: 'section',
+                  fields: [
+                    { type: 'mrkdwn', text: `*📂 Project*\n${project}` },
+                    { type: 'mrkdwn', text: `*⚙️ Upgrade Reason*\n${reason}` }
+                  ]
+                },
+                {
+                  type: 'section',
+                  fields: [
+                    { type: 'mrkdwn', text: `*🔑 Program ID*\n\`${programId}\`` },
+                    { type: 'mrkdwn', text: `*🔀 Commit ID / Branch*\n\`${commitId}\`` }
+                  ]
+                },
+                {
+                  type: 'section',
+                  text: {
+                    type: 'mrkdwn',
+                    text: `*#️⃣ Verifiable Build Hash*\n\`\`\`${buildHash}\`\`\``
+                  }
+                },
+                {
+                  type: 'section',
+                  text: { type: 'mrkdwn', text: `*📎 Audit Reports*\n${auditReports}` }
+                },
+                {
+                  type: 'section',
+                  text: { type: 'mrkdwn', text: `*📋 Summary of Changes*\n${summary}` }
+                },
+                { type: 'divider' },
+                {
+                  type: 'context',
+                  elements: [
+                    {
+                      type: 'mrkdwn',
+                      text: `📦 Repo: *${context.repo.owner}/${context.repo.repo}*  |  🕐 ${issue.created_at}`
+                    }
+                  ]
+                }
+              ]
+            };
+
+            core.setOutput('payload', JSON.stringify(payload));
+
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        with:
+          payload: ${{ steps.payload.outputs.payload }}
