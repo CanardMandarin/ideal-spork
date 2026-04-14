@@ -62,8 +62,6 @@ body:
       label: Audit Reports
       description: >
         Attach audit reports if applicable.
-      placeholder: |
-        <!-- Drag & drop audit report files here -->
     validations:
       required: false
   
