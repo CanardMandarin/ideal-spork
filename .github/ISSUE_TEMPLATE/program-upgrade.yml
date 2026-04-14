@@ -43,7 +43,7 @@ body:
     attributes:
       label: Verifiable Build Hash
       description: The SHA-256 hash of the verifiable build artifact.
-      placeholder: "e.g. sha256:a3f1c2d4e5b67890abcdef1234567890abcdef1234567890abcdef1234567890"
+      placeholder: "e.g. a3f1c2d4e5b67890abcdef1234567890abcdef1234567890abcdef1234567890"
     validations:
       required: true
 
@@ -65,26 +65,17 @@ body:
         or paste links to publicly available audit reports below.
         Supported formats: PDF, MD, TXT.
       placeholder: |
-        <!-- Drag & drop audit report files here, or paste links below -->
-
-        - https://audits.example.com/report-v1.pdf
+        <!-- Drag & drop audit report files here -->
     validations:
       required: true
 
   - type: textarea
     id: summary
     attributes:
-      label: Summary of Changes / Reason for Upgrade
+      label: Summary of Changes
       description: >
-        Provide a clear and thorough explanation of what changed and why this upgrade is necessary.
-        Include any potential risks, rollback strategies, or notable diffs if applicable.
+        Provide an explanation of what changed and why this upgrade is necessary.
       placeholder: |
         **What changed:**
-        
-
-        **Why this upgrade is needed:**
-        
-
-        **Potential risks / rollback plan:**
     validations:
       required: true
