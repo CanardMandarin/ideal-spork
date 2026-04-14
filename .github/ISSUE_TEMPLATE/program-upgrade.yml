@@ -56,17 +56,17 @@ body:
     validations:
       required: true
 
-  - type: textarea
+  - type: upload
     id: audit_reports
     attributes:
       label: Audit Reports
       description: >
-        Attach audit report files by **dragging and dropping them into this box**,
-        or paste links to publicly available audit reports below.
-        Supported formats: PDF, MD, TXT.
+        Attach audit reports if applicable.
       placeholder: |
         <!-- Drag & drop audit report files here -->
-
+    validations:
+      required: false
+  
   - type: textarea
     id: summary
     attributes:
