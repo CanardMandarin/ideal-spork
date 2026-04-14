@@ -28,6 +28,8 @@ jobs:
       - name: Parse issue form fields
         id: fields
         uses: actions/github-script@v7
+        env:
+          SLACK_REVIEW_GROUP_ID: ${{ vars.SLACK_REVIEW_GROUP_ID }}
         with:
           script: |
             const body = context.payload.issue.body || '';
@@ -55,6 +57,12 @@ jobs:
             const truncate = (str, n = 300) =>
               str.length > n ? str.slice(0, n) + '…' : str;
 
+            // Resolve the Slack user group mention here so it is available
+            // as a plain string in the payload block — vars.* is not reliably
+            // substituted inside the slackapi action's payload field.
+            const groupId     = process.env.SLACK_REVIEW_GROUP_ID;
+            const groupMention = groupId ? `<!subteam^${groupId}>` : '<!here>';
+
             core.setOutput('project',       project);
             core.setOutput('program_id',    programId);
             core.setOutput('reason',        reason);
@@ -62,6 +70,7 @@ jobs:
             core.setOutput('commit_id',     commitId);
             core.setOutput('audit_reports', truncate(auditReports, 400));
             core.setOutput('summary',       truncate(summary, 600));
+            core.setOutput('group_mention', groupMention);
 
       # ── 2. Send the Slack message ─────────────────────────────────────────────
       #
@@ -91,7 +100,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "<${{ github.event.issue.html_url }}|*#${{ github.event.issue.number }} — ${{ github.event.issue.title }}*>\nOpened by *${{ github.event.issue.user.login }}*"
+                    "text": "${{ steps.fields.outputs.group_mention }} — a new upgrade intent requires your attention.\n\n<${{ github.event.issue.html_url }}|*#${{ github.event.issue.number }} — ${{ github.event.issue.title }}*>\nOpened by *${{ github.event.issue.user.login }}*"
                   },
                   "accessory": {
                     "type": "button",
