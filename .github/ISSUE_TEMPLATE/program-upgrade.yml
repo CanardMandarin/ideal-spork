@@ -56,6 +56,26 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: idl_changed
+    attributes:
+      label: Does this upgrade introduce any IDL changes?
+      description: Let us know if the program's IDL has been modified as part of this upgrade.
+      options:
+        - "No"
+        - "Yes"
+    validations:
+      required: true
+
+  - type: upload
+    id: idl_file
+    attributes:
+      label: Updated IDL
+      description: >
+        If you answered "Yes" above, please attach the updated IDL file for the program.
+    validations:
+      required: false
+
   - type: textarea
     id: summary
     attributes:
